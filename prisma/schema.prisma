@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Baby {
+  id        String   @id @default(cuid())
+  name      String
+  birthDate DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs      Log[]
+}
+
+model Log {
+  id              String   @id @default(cuid())
+  babyId          String
+  baby            Baby     @relation(fields: [babyId], references: [id], onDelete: Cascade)
+  type            LogType
+  startTime       DateTime
+  endTime         DateTime?
+  amount          Float?
+  unit            String?
+  rawTranscript   String
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([babyId])
+  @@index([type])
+  @@index([startTime])
+}
+
+enum LogType {
+  FEEDING
+  SLEEP
+  DIAPER
+  NOTE
+}
