@@ -18,11 +18,13 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
 
   const startRecording = useCallback(() => {
-    // Check browser support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    // Check browser support - eslint-disable for experimental API
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
       setError('Speech recognition is not supported in this browser')
       return
@@ -39,7 +41,8 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
       setTranscript('')
     }
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
       let finalTranscript = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
@@ -52,7 +55,8 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
       }
     }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error)
       setError(`Error: ${event.error}`)
       setState('idle')
@@ -161,14 +165,6 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
       )}
     </div>
   )
-}
-
-// Type declarations for Web Speech API
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
-  }
 }
 
 export default VoiceRecorder

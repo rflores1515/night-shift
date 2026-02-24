@@ -25,7 +25,8 @@ class LogRepository implements ILogRepository {
         unit: data.unit,
         rawTranscript: data.rawTranscript,
         notes: data.notes,
-        metadata: data.metadata,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: data.metadata as any,
       },
     }) as Log
   }
@@ -61,7 +62,8 @@ class LogRepository implements ILogRepository {
         amount: data.amount,
         unit: data.unit,
         notes: data.notes,
-        metadata: data.metadata,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: data.metadata as any,
       },
     }) as Log
   }
