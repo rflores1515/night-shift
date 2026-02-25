@@ -61,3 +61,13 @@ export interface WeeklyInsights {
   patterns: string[]
   suggestions: string[]
 }
+
+export interface ParsedLog {
+  type: LogType
+  startTime: string
+  endTime?: string
+  amount?: number
+  unit?: string
+  notes?: string
+  confidence: number
+}

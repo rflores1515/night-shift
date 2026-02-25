@@ -1,9 +1,9 @@
 // Voice Service - Single Responsibility: handle voice processing and parsing
-// Follows Interface Segregation: focused on voice-related operations
 
-import { parseVoiceTranscript, ParsedLog } from '@/lib/anthropic'
 import { LogService } from './log.service'
-import { CreateLogDto, Log, VoiceInputDto, VoiceOutputDto } from '@/types'
+import { CreateLogDto, Log, VoiceInputDto, VoiceOutputDto, ParsedLog } from '@/types'
+import { createTranscriptParser } from '@/lib/ai/parser'
+import { AI_PROVIDER } from '@/lib/ai/config'
 
 export class VoiceService {
   private logService: LogService
@@ -14,7 +14,8 @@ export class VoiceService {
 
   async processVoiceInput(input: VoiceInputDto): Promise<VoiceOutputDto> {
     // Step 1: Parse transcript with LLM
-    const parsed = await this.parseTranscript(input.transcript)
+    const parser = createTranscriptParser(AI_PROVIDER)
+    const parsed = await parser.parse(input.transcript)
 
     // Step 2: Convert parsed data to log format
     const logData = this.convertToLogData(input.babyId, input.transcript, parsed)
@@ -29,10 +30,6 @@ export class VoiceService {
         confidence: parsed.confidence,
       },
     }
-  }
-
-  private async parseTranscript(transcript: string): Promise<ParsedLog> {
-    return await parseVoiceTranscript(transcript)
   }
 
   private convertToLogData(
@@ -53,20 +50,17 @@ export class VoiceService {
   }
 
   private parseTime(timeInput: string): Date {
-    // Handle relative times like "now", "5 minutes ago"
     const now = new Date()
 
     if (timeInput.toLowerCase() === 'now') {
       return now
     }
 
-    // Try parsing as ISO timestamp first
     const isoDate = new Date(timeInput)
     if (!isNaN(isoDate.getTime())) {
       return isoDate
     }
 
-    // Handle relative time expressions
     const minutesMatch = timeInput.match(/(\d+)\s*minutes?\s*ago/i)
     if (minutesMatch) {
       const minutes = parseInt(minutesMatch[1], 10)
@@ -79,7 +73,6 @@ export class VoiceService {
       return new Date(now.getTime() - hours * 60 * 60 * 1000)
     }
 
-    // Default to current time if parsing fails
     return now
   }
 }
