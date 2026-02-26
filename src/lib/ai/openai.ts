@@ -4,9 +4,15 @@ import OpenAI from 'openai'
 import { ParsedLog, WeeklyInsights } from '@/types'
 import { ITranscriptParser, IInsightGenerator, LogEntry } from './parser'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialize OpenAI client to avoid build-time errors
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set')
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+}
 
 const logSchema = {
   type: 'object',
@@ -24,7 +30,7 @@ const logSchema = {
 export class OpenAITranscriptParser implements ITranscriptParser {
   async parse(transcript: string): Promise<ParsedLog> {
     try {
-      const response = await openai.responses.create({
+      const response = await getOpenAIClient().responses.create({
         model: 'gpt-4o-mini',
         input: [
           {
@@ -90,7 +96,7 @@ export class OpenAIInsightGenerator implements IInsightGenerator {
       .join('\n')
 
     try {
-      const response = await openai.responses.create({
+      const response = await getOpenAIClient().responses.create({
         model: 'gpt-4o-mini',
         input: [
           {
