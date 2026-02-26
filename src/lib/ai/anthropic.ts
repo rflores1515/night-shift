@@ -23,7 +23,7 @@ export class AnthropicTranscriptParser implements ITranscriptParser {
         messages: [{ role: 'user', content: transcript }],
       })
 
-      const textContent = message.content.find((c: { type: string }) => c.type === 'text')
+      const textContent = message.content.find((c): c is Anthropic.TextBlock => c.type === 'text')
       const responseText = textContent?.text || ''
       const jsonMatch = responseText.match(/\{[\s\S]*\}/)
 
@@ -111,7 +111,7 @@ ${logSummary}`,
         ],
       })
 
-      const textContent = message.content.find((c: { type: string }) => c.type === 'text')
+      const textContent = message.content.find((c): c is Anthropic.TextBlock => c.type === 'text')
       const responseText = textContent?.text || ''
       const jsonMatch = responseText.match(/\{[\s\S]*\}/)
 

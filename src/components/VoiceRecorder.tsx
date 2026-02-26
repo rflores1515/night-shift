@@ -121,12 +121,12 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6 bg-white rounded-xl shadow-sm border">
+    <div className="flex flex-col sm:flex-row items-center gap-4 p-4 sm:p-6 bg-white rounded-xl shadow-sm border">
       <button
         onClick={toggleRecording}
         disabled={state === 'processing'}
         className={`
-          w-20 h-20 rounded-full flex items-center justify-center transition-all
+          w-20 h-20 rounded-full flex items-center justify-center transition-all flex-shrink-0
           ${
             state === 'recording'
               ? 'bg-red-500 animate-pulse'
@@ -146,23 +146,25 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
         )}
       </button>
 
-      <p className="text-sm text-gray-600 text-center">
-        {state === 'idle' && 'Tap to start recording'}
-        {state === 'recording' && 'Tap to stop and process'}
-        {state === 'processing' && 'Processing your note...'}
-      </p>
+      <div className="flex-1 text-center sm:text-left">
+        <p className="text-sm text-gray-600">
+          {state === 'idle' && 'Tap to start recording'}
+          {state === 'recording' && 'Tap to stop and process'}
+          {state === 'processing' && 'Processing your note...'}
+        </p>
 
-      {transcript && (
-        <div className="w-full p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-700">{transcript}</p>
-        </div>
-      )}
+        {transcript && (
+          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-700">{transcript}</p>
+          </div>
+        )}
 
-      {error && (
-        <div className="w-full p-3 bg-red-50 rounded-lg">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
