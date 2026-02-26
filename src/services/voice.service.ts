@@ -5,6 +5,25 @@ import { CreateLogDto, Log, VoiceInputDto, VoiceOutputDto, ParsedLog } from '@/t
 import { createTranscriptParser } from '@/lib/ai/parser'
 import { AI_PROVIDER } from '@/lib/ai/config'
 
+// Baby-related keywords for validation
+const BABY_KEYWORDS = [
+  'baby', 'infant', 'newborn', 'little one', 'little one\'s',
+  // Feeding
+  'feed', 'ate', 'drank', 'nurse', 'nursing', 'bottle', 'breast', 'formula', 'milk', 'solid', 'food', 'oz', 'ml',
+  // Sleep
+  'sleep', 'slept', 'nap', 'napped', 'bed', 'bedtime', 'asleep', 'wake', 'woke', 'waking',
+  // Diaper
+  'diaper', 'wet', 'dirty', 'poop', 'poopy', 'pee', 'changed', ' poop ',
+  // Misc
+  'crying', 'fussy', 'happy', 'gassy', 'temperature', 'fever', 'medicine', 'doctor', 'appointment',
+]
+
+// Check if transcript contains baby-related keywords
+function containsBabyKeyword(transcript: string): boolean {
+  const lower = transcript.toLowerCase()
+  return BABY_KEYWORDS.some(keyword => lower.includes(keyword))
+}
+
 export class VoiceService {
   private logService: LogService
 
@@ -13,6 +32,11 @@ export class VoiceService {
   }
 
   async processVoiceInput(input: VoiceInputDto): Promise<VoiceOutputDto> {
+    // Validate: Check for baby-related keywords first
+    if (!containsBabyKeyword(input.transcript)) {
+      throw new Error('UNRECOGNIZED_ACTIVITY')
+    }
+
     // Step 1: Parse transcript with LLM
     const parser = createTranscriptParser(AI_PROVIDER)
     const parsed = await parser.parse(input.transcript)

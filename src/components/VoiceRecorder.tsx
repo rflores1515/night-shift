@@ -99,7 +99,15 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to process voice input')
+        const data = await response.json()
+        // Handle unrecognized activity error
+        if (data.error?.includes('UNRECOGNIZED_ACTIVITY')) {
+          setError('Couldn\'t recognize that as a baby activity. Try saying things like "Baby ate 4 oz" or "Baby slept for 2 hours".')
+        } else {
+          throw new Error(data.error || 'Failed to process voice input')
+        }
+        setState('idle')
+        return
       }
 
       const result = await response.json()
@@ -152,6 +160,13 @@ export function VoiceRecorder({ babyId, onLogCreated }: VoiceRecorderProps) {
           {state === 'recording' && 'Tap to stop and process'}
           {state === 'processing' && 'Processing your note...'}
         </p>
+
+        {/* Example phrases */}
+        {state === 'idle' && (
+          <p className="text-xs text-gray-400 mt-1">
+            Try: &quot;Baby ate 4 oz&quot; or &quot;Baby slept 2 hours&quot;
+          </p>
+        )}
 
         {transcript && (
           <div className="mt-3 p-3 bg-gray-50 rounded-lg">

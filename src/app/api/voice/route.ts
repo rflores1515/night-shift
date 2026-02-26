@@ -23,6 +23,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, { status: 201 })
   } catch (error) {
     console.error('Voice processing error:', error)
+
+    // Handle specific errors
+    if (error instanceof Error && error.message === 'UNRECOGNIZED_ACTIVITY') {
+      return NextResponse.json(
+        { error: 'UNRECOGNIZED_ACTIVITY: Could not recognize this as a baby activity. Try saying things like "Baby ate 4 oz" or "Baby slept for 2 hours".' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Failed to process voice input' },
       { status: 500 }
