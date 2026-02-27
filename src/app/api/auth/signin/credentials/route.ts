@@ -5,11 +5,9 @@ import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
 import { Resend } from 'resend'
 
-const authSecret = process.env.AUTH_SECRET
-if (!authSecret) {
-  throw new Error('AUTH_SECRET environment variable is required')
-}
-const JWT_SECRET = new TextEncoder().encode(authSecret)
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.AUTH_SECRET || 'development-secret-change-in-production'
+)
 
 const isDev = process.env.NODE_ENV === 'development'
 
