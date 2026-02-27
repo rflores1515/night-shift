@@ -1,29 +1,52 @@
 import NextAuth from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
-import Resend from "next-auth/providers/resend"
+import { cookies } from "next/headers"
+import { jwtVerify, SignJWT } from "jose"
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.AUTH_SECRET || "development-secret-key"
+)
+
+export const { handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  providers: [
-    Resend({
-      from: process.env.EMAIL_FROM || "noreply@night-shift.local",
-      apiKey: process.env.RESEND_API_KEY,
-    }),
-  ],
+  providers: [],
   pages: {
     signIn: "/login",
   },
-  callbacks: {
-    async session({ session, user }) {
-      // Add user id to session
-      if (session.user) {
-        session.user.id = user.id
-      }
-      return session
-    },
-  },
   session: {
-    strategy: "database",
+    strategy: "jwt",
   },
 })
+
+// Custom auth function that reads our JWT token
+export async function auth() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get("auth-token")?.value
+
+  if (!token) {
+    return null
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId as string },
+    })
+
+    if (!user) {
+      return null
+    }
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    }
+  } catch {
+    return null
+  }
+}

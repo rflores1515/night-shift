@@ -1,16 +1,17 @@
 'use client'
 
-// LoginForm Component - Magic link login form
+// LoginForm Component - Email login with magic link
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { Mail, Loader2, ArrowRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Mail, Loader2, ArrowRight, CheckCircle } from 'lucide-react'
 
 export function LoginForm() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSent, setIsSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,15 +33,27 @@ export function LoginForm() {
     }
 
     try {
-      const result = await signIn('resend', {
-        email: email.trim(),
-        redirect: false,
+      const response = await fetch('/api/auth/signin/credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim() }),
       })
 
-      if (result?.error) {
-        setError('Failed to send magic link. Please try again.')
-      } else {
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sign in')
+      }
+
+      // In dev mode, we get success and redirect
+      // In prod, we get success + message and show "check your email"
+      if (data.message === 'Magic link sent') {
         setIsSent(true)
+      } else {
+        router.push('/dashboard')
+        router.refresh()
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
@@ -53,7 +66,7 @@ export function LoginForm() {
     return (
       <div className="text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Mail className="w-8 h-8 text-green-600" />
+          <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Check your email
@@ -61,15 +74,12 @@ export function LoginForm() {
         <p className="text-gray-600 mb-6">
           We sent a magic link to <span className="font-medium">{email}</span>
         </p>
-        <p className="text-sm text-gray-500">
-          Click the link in the email to sign in. The link expires in 24 hours.
-        </p>
         <button
           onClick={() => {
             setIsSent(false)
             setEmail('')
           }}
-          className="mt-6 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
           Use a different email
         </button>
@@ -118,7 +128,7 @@ export function LoginForm() {
         {isLoading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            Sending magic link...
+            Sending...
           </>
         ) : (
           <>
@@ -129,7 +139,7 @@ export function LoginForm() {
       </button>
 
       <p className="text-center text-sm text-gray-500">
-        We'll email you a magic link for a password-free sign in.
+        We&apos;ll email you a magic link to sign in.
       </p>
     </form>
   )
