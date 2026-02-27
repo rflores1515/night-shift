@@ -3,12 +3,25 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { LogService } from '@/services/log.service'
+import { BabyService } from '@/services/baby.service'
 import { CreateLogDto } from '@/types'
+import { auth } from '@/lib/auth'
 
 const logService = new LogService()
+const babyService = new BabyService()
+
+async function verifyBabyAccess(babyId: string, userId: string): Promise<boolean> {
+  const baby = await babyService.getBabyById(babyId, userId)
+  return !!baby
+}
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const babyId = searchParams.get('babyId')
     const startDate = searchParams.get('startDate')
@@ -19,6 +32,12 @@ export async function GET(request: NextRequest) {
         { error: 'Missing required query param: babyId' },
         { status: 400 }
       )
+    }
+
+    // Verify user has access to this baby
+    const hasAccess = await verifyBabyAccess(babyId, session.user.id)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const logs = await logService.getLogsByBaby(babyId, {
@@ -38,6 +57,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body: CreateLogDto = await request.json()
 
     if (!body.babyId || !body.type || !body.startTime) {
@@ -45,6 +69,12 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: babyId, type, startTime' },
         { status: 400 }
       )
+    }
+
+    // Verify user has access to this baby
+    const hasAccess = await verifyBabyAccess(body.babyId, session.user.id)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const log = await logService.createLog({
