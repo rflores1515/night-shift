@@ -1,6 +1,25 @@
 // Log Types - Single Responsibility: represent domain types
 
+import { DefaultSession } from "next-auth"
+
 export type LogType = 'FEEDING' | 'SLEEP' | 'DIAPER' | 'NOTE'
+
+// Extend NextAuth session types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+    } & DefaultSession["user"]
+  }
+}
+
+export interface User {
+  id: string
+  email: string
+  name?: string | null
+  createdAt: Date
+  updatedAt: Date
+}
 
 export interface Baby {
   id: string
@@ -8,6 +27,11 @@ export interface Baby {
   birthDate: Date
   createdAt: Date
   updatedAt: Date
+}
+
+export interface CreateBabyDto {
+  name: string
+  birthDate: Date
 }
 
 export interface Log {
