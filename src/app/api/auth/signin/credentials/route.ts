@@ -5,11 +5,13 @@ import { SignJWT, jwtVerify } from 'jose'
 import { z } from 'zod'
 import { Resend } from 'resend'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || 'development-secret-key'
-)
+const authSecret = process.env.AUTH_SECRET
+if (!authSecret) {
+  throw new Error('AUTH_SECRET environment variable is required')
+}
+const JWT_SECRET = new TextEncoder().encode(authSecret)
 
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = process.env.NODE_ENV === 'development'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
       const cookieStore = await cookies()
       cookieStore.set('auth-token', token, {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 7,
         path: '/',

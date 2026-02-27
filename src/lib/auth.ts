@@ -4,9 +4,11 @@ import { prisma } from "@/lib/prisma"
 import { cookies } from "next/headers"
 import { jwtVerify, SignJWT } from "jose"
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "development-secret-key"
-)
+const authSecret = process.env.AUTH_SECRET
+if (!authSecret) {
+  throw new Error('AUTH_SECRET environment variable is required')
+}
+const JWT_SECRET = new TextEncoder().encode(authSecret)
 
 export const { handlers, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),

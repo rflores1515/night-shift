@@ -3,12 +3,25 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { VoiceService } from '@/services/voice.service'
+import { BabyService } from '@/services/baby.service'
 import { VoiceInputDto } from '@/types'
+import { auth } from '@/lib/auth'
 
 const voiceService = new VoiceService()
+const babyService = new BabyService()
+
+async function verifyBabyAccess(babyId: string, userId: string): Promise<boolean> {
+  const baby = await babyService.getBabyById(babyId, userId)
+  return !!baby
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body: VoiceInputDto = await request.json()
 
     if (!body.transcript || !body.babyId) {
@@ -16,6 +29,12 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: transcript and babyId' },
         { status: 400 }
       )
+    }
+
+    // Verify user has access to this baby
+    const hasAccess = await verifyBabyAccess(body.babyId, session.user.id)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const result = await voiceService.processVoiceInput(body)
