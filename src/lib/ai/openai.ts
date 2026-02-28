@@ -17,13 +17,14 @@ function getOpenAIClient() {
 const logSchema = {
   type: 'object',
   properties: {
-    type: { type: 'string', enum: ['FEEDING', 'SLEEP', 'DIAPER', 'NOTE'] },
+    type: { type: 'string', enum: ['FEEDING', 'SLEEP', 'DIAPER', 'NOTE', 'REJECT'] },
     amount: { type: 'number' },
     unit: { type: 'string' },
     notes: { type: 'string' },
-    confidence: { type: 'number' },
+    confidence: { type: 'number', minimum: 0, maximum: 1 },
+    rejectionReason: { type: 'string' },
   },
-  required: ['type', 'confidence', 'amount', 'unit', 'notes'],
+  required: ['type', 'confidence'],
   additionalProperties: false,
 }
 
@@ -36,11 +37,18 @@ export class OpenAITranscriptParser implements ITranscriptParser {
           {
             role: 'system',
             content: `You are a baby log parser. Analyze the transcript and extract:
-- type: FEEDING (bottle, formula, breast, solid), SLEEP (nap, sleep), DIAPER (wet, dirty, change), NOTE (anything else)
+- type: FEEDING (bottle, formula, breast, solid), SLEEP (nap, sleep), DIAPER (wet, dirty, change), NOTE (anything else), REJECT (nonsense, unrelated to baby care)
 - amount: numeric value if mentioned
 - unit: oz, ml, minutes, hours
 - notes: additional details
-- confidence: 0-1 based on certainty`,
+- confidence: 0-1 based on certainty
+- rejectionReason: if REJECT, explain why
+
+STRICT RULES:
+1. If the transcript is gibberish, random unrelated words, or clearly not about baby care, set type to REJECT and confidence to 0.1
+2. If the transcript is a clear baby activity with specific details (amount, time), set confidence to 0.8-1.0
+3. If the transcript is a valid baby note without specific details, set type to NOTE and confidence to 0.6-0.8
+4. Only use REJECT for truly nonsensical input like "xyz abc 123", "blah blah", "what's the weather"`,
           },
           { role: 'user', content: transcript },
         ],
@@ -54,6 +62,8 @@ export class OpenAITranscriptParser implements ITranscriptParser {
       })
 
       const parsed = JSON.parse(response.output_text)
+
+      console.log('OpenAI parsed result:', JSON.stringify(parsed))
 
       return {
         type: parsed.type || 'NOTE',
