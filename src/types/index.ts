@@ -4,6 +4,8 @@ import { DefaultSession } from "next-auth"
 
 export type LogType = 'FEEDING' | 'SLEEP' | 'DIAPER' | 'NOTE'
 
+export type ParsedLogType = LogType | 'REJECT'
+
 // Extend NextAuth session types
 declare module "next-auth" {
   interface Session {
@@ -87,7 +89,7 @@ export interface WeeklyInsights {
 }
 
 export interface ParsedLog {
-  type: LogType
+  type: ParsedLogType
   startTime: string
   endTime?: string
   amount?: number
